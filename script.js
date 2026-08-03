@@ -1,6 +1,10 @@
 const ranges = [5000, 10000, 15000, 20000, 25000, 30000, 35000];
 const difficultyMap = new Map();
 
+const titles = ["Intermediate 1", "Intermediate 2", "Intermediate 3", "Intermediate 4", "Intermediate 5", "Intermediate 6", "Intermediate 7", "Intermediate 8", "Intermediate 9", "Intermediate 10", "Advanced 1", "Advanced 2", "Advanced 3", "Advanced 4", "Advanced 5", "Advanced 6", "Advanced 7", "Advanced 8", "Advanced 9", "Advanced 10", "Expert 1", "Expert 2", "Expert 3", "Expert 4", "Expert 5", "Expert 6", "Expert 7", "Expert 8", "Expert 8", "Expert 10", "Master"];
+const doublesTitles = [5000, 5700, 6400, 7100, 7800, 8500, 9200, 9900, 10600, 11300, 12000, 12250, 12500, 12750, 13000, 13250, 13500, 13750, 14000, 14250, 14500, 14950, 15400, 15850, 16300, 16750, 17200, 17650, 18100, 18550, 19000];
+const singlesTitles = [5000, 5700, 6400, 7100, 7800, 8500, 9200, 9900, 10600, 11300, 12000, 12250, 12500, 12750, 13000, 13250, 13500, 13750, 14000, 14250, 14500, 14900, 15300, 15700, 16100, 16500, 16900, 17300, 17700, 18100, 18500];
+
 difficultyMap.set("S1", 0);
 difficultyMap.set("S2", 0.5);
 difficultyMap.set("S3", 1);
@@ -67,9 +71,21 @@ function sumArr(arr) {
     return arr.reduce((partialSum, a) => partialSum + a, 0);
 }
 
+function calcRating(score, difficulty) {
+    let bonus = 0;
+    let base = difficultyMap.get(difficulty);
+    for (let i = 0; i < ranges.length; i++) {
+        bonus += mapNN((score - (1000000 - sumArr(ranges.slice(0, i + 1)))) / ranges[i]);
+    }
+    return rating = 1 + (16.7 * (base + (bonus * (base / 17))));
+}
+
 function getRating(reader) {
     const scores = reader.result.split("\n");
     let newScores = [];
+    let newSingles = [];
+    let newDoubles = [];
+
     for (const curScore of scores) {
         if (!curScore) continue;
 
@@ -86,29 +102,54 @@ function getRating(reader) {
         let score = Number(t1[1].replaceAll(",", ""));
         if (!score) continue;
 
-        let bonus = 0;
-        for (let i = 0; i < ranges.length; i++) {
-            bonus += mapNN((score - (1000000 - sumArr(ranges.slice(0, i + 1)))) / ranges[i]);
+        let rating = calcRating(score, difficulty).toFixed(2);
+        let formatedScore = [rating, `${difficulty}, ${name}, Score: ${score}, Aura Rating: ${rating}\n`];
+        newScores.push(formatedScore);
+
+        if (difficulty[0] == "S") {
+            newSingles.push(formatedScore);
+        } else {
+            newDoubles.push(formatedScore);
         }
-        
-        let base = difficultyMap.get(difficulty)
-        let rating = 1 + (16.7 * (base + (bonus * (base / 17))));
-        rating = rating.toFixed(2);
-        newScores.push([rating, `${difficulty}, ${name}, Score: ${score}, Aura Rating: ${rating}\n`]);
     }
     const sortedScores = newScores.sort((a, b) => b[0] - a[0]);
+    const sortedSingles = newSingles.sort((a, b) => b[0] - a[0]);
+    const sortedDoubles = newDoubles.sort((a, b) => b[0] - a[0]);
 
-    let output = "";
-    let total = 0;
+    let totalList = "";
+    let singlesList = "";
+    let doublesList = "";
+
+    let totalRating = 0;
+    let singlesRating = 0;
+    let doublesRating = 0;
+
     for (let i = 0; i < 50; i++) {
-        output += `${i + 1}: ${sortedScores[i][1]}`;
-        total += Number(sortedScores[i][0]);
+        totalList += `${i + 1}: ${sortedScores[i][1]}`;
+        singlesList += `${i + 1}: ${sortedSingles[i][1]}`;
+        doublesList += `${i + 1}: ${sortedDoubles[i][1]}`;
+
+        totalRating += Number(sortedScores[i][0]);
+        singlesRating += Number(sortedSingles[i][0]);
+        doublesRating += Number(sortedDoubles[i][0]);
     }
-    ratingTotal.innerText = `Total Rating: ${total.toFixed(2)}\n${output}`;
+
+    let singlesTitle = "Beginner";
+    let doublesTitle = "Beginner";
+    for (let i = 0; i < titles.length; i++) {
+        if (singlesRating >=  singlesTitles[i]) singlesTitle = titles[i];
+        if (doublesRating >=  doublesTitles[i]) doublesTitle = titles[i];
+    }
+
+    ratingTotal.innerText = `Total Rating: ${totalRating.toFixed(2)}\n${totalList}\nDoubles Rating: ${doublesRating.toFixed(2)}, (Double ${doublesTitle})\n${doublesList}\nSingles Rating: ${singlesRating.toFixed(2)}, (Single ${singlesTitle})\n${singlesList}`;
 }
 
 var hiddenBtn = document.getElementById('hiddenBtn');
 var ratingTotal = document.getElementById('ratingTotal');
+
+let testDifficulty = "S22";
+let testScore = 960000;
+ratingTotal.innerText = `50 ${testScore}'s at ${testDifficulty} is ${50 * calcRating(testScore, testDifficulty).toFixed(2)}`;
 
 hiddenBtn.addEventListener('change', () => {
     const file = hiddenBtn.files?.[0];
